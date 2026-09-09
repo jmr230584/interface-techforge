@@ -73,19 +73,25 @@ export class CategoriaRequests {
     }
   }
 
-  /**
-   * Deletar categoria
-   * Endpoint: DELETE /categoria/:id
-   */
-  static async deletar(id: number | string): Promise<boolean> {
+  static async deletar(id: number | string): Promise<{ sucesso: boolean; mensagem?: string }> {
     try {
-      const response = await fetch(`${BASE_URL}/categoria/${id}`, {
-        method: 'DELETE',
-      });
-      return response.ok;
+        const response = await fetch(`${BASE_URL}/categoria/${id}`, {
+            method: 'DELETE',
+        });
+
+        const dados = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+            return { sucesso: true, mensagem: dados.mensagem || "Categoria excluída com sucesso." };
+        }
+
+        return { 
+            sucesso: false, 
+            mensagem: dados.mensagem || "Erro ao tentar excluir a categoria." 
+        };
     } catch (error) {
-      console.error('Erro em CategoriaRequests.deletar:', error);
-      return false;
+        console.error('Erro em CategoriaRequests.deletar:', error);
+        return { sucesso: false, mensagem: "Erro ao conectar com o servidor para exclusão." };
     }
-  }
+}
 }
