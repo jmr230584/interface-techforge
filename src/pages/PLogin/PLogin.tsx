@@ -7,6 +7,7 @@ export const PLogin: React.FC = () => {
     const [modalAtivo, setModalAtivo] = useState<'login' | 'cadastro' | null>(null);
 
     // Estados dos formulários
+    const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
     const [erro, setErro] = useState('');
@@ -17,6 +18,7 @@ export const PLogin: React.FC = () => {
     const navigate = useNavigate();
 
     const limparCampos = () => {
+        setNome('');
         setEmail('');
         setSenha('');
         setErro('');
@@ -52,10 +54,14 @@ export const PLogin: React.FC = () => {
                 throw new Error(data.mensagem || 'Credenciais inválidas.');
             }
 
+            if (!data.token) {
+                throw new Error('Token não retornado pelo servidor.');
+            }
+
             login(data.token, data.usuario);
-            navigate('/produtos');
+            navigate('/home');
         } catch (err: any) {
-            setErro(err.message);
+            setErro(err.message || 'Erro ao realizar login.');
         } finally {
             setCarregando(false);
         }
@@ -72,7 +78,7 @@ export const PLogin: React.FC = () => {
             const response = await fetch('http://localhost:3000/usuario', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha }),
+                body: JSON.stringify({ nome, email, senha }),
             });
 
             const data = await response.json();
@@ -86,7 +92,7 @@ export const PLogin: React.FC = () => {
                 abrirModal('login');
             }, 1500);
         } catch (err: any) {
-            setErro(err.message);
+            setErro(err.message || 'Erro ao realizar cadastro.');
         } finally {
             setCarregando(false);
         }
@@ -138,6 +144,20 @@ export const PLogin: React.FC = () => {
                             onSubmit={modalAtivo === 'login' ? handleLoginSubmit : handleCadastroSubmit} 
                             style={styles.form}
                         >
+                            {modalAtivo === 'cadastro' && (
+                                <div style={styles.campoGroup}>
+                                    <label style={styles.label}>Nome Completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={nome}
+                                        onChange={(e) => setNome(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="Seu nome"
+                                    />
+                                </div>
+                            )}
+
                             <div style={styles.campoGroup}>
                                 <label style={styles.label}>E-mail</label>
                                 <input
