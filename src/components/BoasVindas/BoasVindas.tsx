@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Boxes, Cpu, Shield, Zap, ArrowRight } from 'lucide-react';
+import { Boxes, Cpu, Zap, ArrowRight } from 'lucide-react';
 import './BoasVindas.css';
 
 export function BoasVindas() {
