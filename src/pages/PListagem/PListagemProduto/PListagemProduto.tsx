@@ -14,9 +14,7 @@ export function PListagemProduto() {
   // Estados do Modal de Edição
   const [produtoEditando, setProdutoEditando] = useState<ProdutoDTO | null>(null);
   const [nomeEdit, setNomeEdit] = useState("");
-  const [categoriaEdit, setCategoriaEdit] = useState("");
   const [precoEdit, setPrecoEdit] = useState<number | string>("");
-  const [quantidadeEdit, setQuantidadeEdit] = useState<number>(0);
   const [salvando, setSalvando] = useState(false);
 
   const carregarProdutos = async () => {
@@ -24,15 +22,7 @@ export function PListagemProduto() {
     setErro(false);
     try {
       const dados = await ProdutoRequests.listarTodos();
-
-      // Ordena por código/ID crescente para garantir que o cadastro mais recente fique no fim da lista
-      const ordenados = [...dados].sort((a, b) => {
-        const idA = Number(a.codigo_produto) || 0;
-        const idB = Number(b.codigo_produto) || 0;
-        return idA - idB;
-      });
-
-      setProdutos(ordenados);
+      setProdutos(dados);
     } catch (error) {
       setErro(true);
     } finally {
@@ -44,58 +34,44 @@ export function PListagemProduto() {
     carregarProdutos();
   }, []);
 
-  const formatarPreco = (val: number | string) => {
-    const num = Number(val);
-    return isNaN(num) ? "0.00" : num.toFixed(2);
-  };
-
   const handleAbrirEditar = (prod: ProdutoDTO) => {
     setProdutoEditando(prod);
-    setNomeEdit(prod.nome);
-    setCategoriaEdit(prod.categoria);
-    setPrecoEdit(prod.preco_unitario);
-    setQuantidadeEdit(prod.quantidade_disponivel);
+    setNomeEdit(prod.nome || "");
+    setPrecoEdit(prod.preco_unitario ?? "");
   };
 
   const handleFecharModal = () => {
     setProdutoEditando(null);
     setNomeEdit("");
-    setCategoriaEdit("");
     setPrecoEdit("");
-    setQuantidadeEdit(0);
   };
 
   const handleSalvarAtualizacao = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!produtoEditando) return;
 
-    const codigo = produtoEditando.codigo_produto;
+    const id = (produtoEditando as any).id_produto ?? (produtoEditando as any).id;
+    if (!id) return;
+
     setSalvando(true);
 
     try {
-      const dadosAtualizados: Partial<ProdutoDTO> = {
+      const dadosAtualizados: any = {
         ...produtoEditando,
+        id_produto: id,
+        id: id,
         nome: nomeEdit,
-        categoria: categoriaEdit,
-        preco_unitario: Number(precoEdit),
-        quantidade_disponivel: Number(quantidadeEdit),
+        preco_unitario: Number(precoEdit)
       };
 
-      const sucesso = await ProdutoRequests.atualizar(codigo, dadosAtualizados);
+      const sucesso = await ProdutoRequests.atualizar(dadosAtualizados);
 
       if (sucesso) {
         setProdutos((prev) =>
-          prev.map((p) =>
-            p.codigo_produto === codigo
-              ? {
-                  ...p,
-                  nome: nomeEdit,
-                  categoria: categoriaEdit,
-                  preco_unitario: Number(precoEdit),
-                  quantidade_disponivel: Number(quantidadeEdit),
-                }
-              : p
-          )
+          prev.map((p) => {
+            const pId = (p as any).id_produto ?? (p as any).id;
+            return pId === id ? { ...p, nome: nomeEdit, preco_unitario: Number(precoEdit) } : p;
+          })
         );
         handleFecharModal();
       } else {
@@ -108,13 +84,14 @@ export function PListagemProduto() {
     }
   };
 
-  const handleDeletar = async (codigo: string) => {
+  const handleDeletar = async (id?: number) => {
+    if (!id) return;
     if (!window.confirm("Tem certeza que deseja excluir este produto?")) return;
 
     try {
-      const sucesso = await ProdutoRequests.deletar(codigo);
+      const sucesso = await ProdutoRequests.remover(id);
       if (sucesso) {
-        setProdutos((prev) => prev.filter((p) => p.codigo_produto !== codigo));
+        setProdutos((prev) => prev.filter((p) => ((p as any).id_produto ?? (p as any).id) !== id));
       } else {
         alert("Erro ao excluir o produto.");
       }
@@ -129,7 +106,7 @@ export function PListagemProduto() {
   return (
     <div className="container-listagem">
       <div className="header-listagem">
-        <h2>Catálogo de Produtos</h2>
+        <h2>Listagem de Produtos</h2>
         <button 
           className="btn-cadastrar" 
           onClick={() => navigate("/cadastro/produto")}
@@ -145,28 +122,21 @@ export function PListagemProduto() {
           <table className="tabela-listagem">
             <thead>
               <tr>
-                <th>CÓDIGO</th>
+                <th>ID PRODUTO</th>
                 <th>NOME</th>
-                <th>CATEGORIA</th>
                 <th>PREÇO</th>
-                <th>DISPONÍVEL</th>
-                <th>MÍNIMO</th>
                 <th>AÇÕES</th>
               </tr>
             </thead>
             <tbody>
               {produtos.map((prod, index) => {
-                const codigo = prod.codigo_produto;
-                const preco = formatarPreco(prod.preco_unitario);
+                const idProd = (prod as any).id_produto ?? (prod as any).id;
 
                 return (
-                  <tr key={codigo || index}>
-                    <td>{codigo}</td>
+                  <tr key={idProd ?? index}>
+                    <td>{idProd ?? "-"}</td>
                     <td>{prod.nome}</td>
-                    <td>{prod.categoria}</td>
-                    <td>R$ {preco}</td>
-                    <td>{prod.quantidade_disponivel}</td>
-                    <td>{prod.quantidade_minima}</td>
+                    <td>R$ {Number(prod.preco_unitario || 0).toFixed(2)}</td>
                     <td>
                       <div className="coluna-acoes">
                         <button 
@@ -177,7 +147,7 @@ export function PListagemProduto() {
                         </button>
                         <button 
                           className="btn-acao btn-deletar"
-                          onClick={() => handleDeletar(codigo)}
+                          onClick={() => handleDeletar(idProd)}
                         >
                           Deletar
                         </button>
@@ -191,12 +161,12 @@ export function PListagemProduto() {
         </div>
       )}
 
-      {/* Modal de Edição */}
+      {/* Bloquinho / Modal de Edição */}
       {produtoEditando && (
         <div className="modal-overlay" onClick={handleFecharModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Atualizar Produto #{produtoEditando.codigo_produto}</h3>
+              <h3>Atualizar Produto #{(produtoEditando as any).id_produto ?? (produtoEditando as any).id}</h3>
               <button className="btn-fechar" onClick={handleFecharModal}>&times;</button>
             </div>
             
@@ -212,32 +182,12 @@ export function PListagemProduto() {
               </div>
 
               <div className="form-group">
-                <label>Categoria:</label>
-                <input
-                  type="text"
-                  value={categoriaEdit}
-                  onChange={(e) => setCategoriaEdit(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Preço Unitário (R$):</label>
+                <label>Preço Unitário:</label>
                 <input
                   type="number"
                   step="0.01"
                   value={precoEdit}
                   onChange={(e) => setPrecoEdit(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Quantidade Disponível:</label>
-                <input
-                  type="number"
-                  value={quantidadeEdit}
-                  onChange={(e) => setQuantidadeEdit(Number(e.target.value))}
                   required
                 />
               </div>
