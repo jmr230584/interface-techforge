@@ -1,182 +1,167 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MovimentacaoRequests } from '../../../fetch/MovimentacaoRequests';
+import { ProdutoRequests } from '../../../fetch/ProdutoRequests';
+import type { ProdutoDTO } from '../../../dto/ProdutoDTO';
 import './PCadastroMovimentacao.css';
 
-type TipoMovimentacao = "ENTRADA" | "SAIDA";
-
-const OPCOES_TIPO: { label: string; value: TipoMovimentacao }[] = [
-  { label: "Entrada", value: "ENTRADA" },
-  { label: "Saída", value: "SAIDA" }
-];
-
-const OPCOES_PRODUTOS = [
-  "Teclado Mecânico RGB",
-  "Mouse Sem Fio 16000 DPI",
-  "Monitor 24\" 144Hz",
-  "SSD NVMe 1TB",
-  "Headset 7.1 Surround",
-  "Cadeira Gamer Ergonomica"
-];
-
-interface FormState {
-  produtoId: string;
-  tipo: TipoMovimentacao | '';
-  quantidade: number;
-  data: string;
-  observacao: string;
+interface FormMovimentacao {
+    id_produto: number | string;
+    tipo: 'ENTRADA' | 'SAIDA';
+    quantidade: number;
+    observacao: string;
 }
 
 export function PCadastroMovimentacao() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState<FormState>({
-    produtoId: '',
-    tipo: '',
-    quantidade: 1,
-    data: new Date().toISOString().split('T')[0],
-    observacao: ''
-  });
+    const navigate = useNavigate();
+    const [produtos, setProdutos] = useState<ProdutoDTO[]>([]);
+    const [formData, setFormData] = useState<FormMovimentacao>({
+        id_produto: '',
+        tipo: 'ENTRADA',
+        quantidade: 0,
+        observacao: ''
+    });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'quantidade' ? Number(value) : value
-    }));
-  };
+    // Carrega a lista de produtos para o <select>
+    useEffect(() => {
+        async function carregarProdutos() {
+            try {
+                const dados = await ProdutoRequests.listarTodos();
+                setProdutos(dados);
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            }
+        }
+        carregarProdutos();
+    }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!formData.tipo) {
-      alert("Selecione o tipo de movimentação.");
-      return;
-    }
-
-    if (formData.quantidade <= 0) {
-      alert("Informe uma quantidade válida maior que zero.");
-      return;
-    }
-
-    // Criamos o objeto pronto no formato exato esperado pela API
-    const payload = {
-      produtoId: formData.produtoId,
-      tipo: formData.tipo as TipoMovimentacao,
-      quantidade: formData.quantidade,
-      data: formData.data,
-      observacao: formData.observacao
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === 'quantidade' 
+                ? Number(value) 
+                : name === 'id_produto' 
+                    ? Number(value) || '' 
+                    : value
+        }));
     };
 
-    const sucesso = await MovimentacaoRequests.cadastrar(payload);
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
 
-    if (sucesso) {
-      alert("Movimentação registrada com sucesso!");
-      navigate('/movimentacoes');
-    } else {
-      alert("Erro ao registrar movimentação. Verifique os dados e a conexão com a API.");
-    }
-  };
+        if (!formData.id_produto) {
+            alert("Selecione um produto válido.");
+            return;
+        }
 
-  return (
-    <main className="form-main-container">
-      <div className="form-wrapper">
-        <form onSubmit={handleSubmit} className="form-card">
-          <h1 className="form-title">Registrar Movimentação</h1>
+        if (formData.quantidade <= 0) {
+            alert("Informe uma quantidade válida maior que zero.");
+            return;
+        }
 
-          <div className="form-grid">
-            <div className="form-group full-width">
-              <label htmlFor="produtoId">Produto</label>
-              <select
-                name="produtoId"
-                id="produtoId"
-                required
-                value={formData.produtoId}
-                onChange={handleChange}
-              >
-                <option value="">-- Escolha um produto --</option>
-                {OPCOES_PRODUTOS.map((item, index) => (
-                  <option key={index} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+        const sucesso = await MovimentacaoRequests.cadastrar({
+            id_produto: Number(formData.id_produto),
+            tipo: formData.tipo,
+            quantidade: formData.quantidade,
+            observacao: formData.observacao || null
+        });
+
+        if (sucesso) {
+            alert("Movimentação registrada com sucesso!");
+            navigate('/movimentacoes');
+        }
+    };
+
+    return (
+        <main className="form-main-container">
+            <div className="form-wrapper">
+                <form onSubmit={handleSubmit} className="form-card">
+                    <h1 className="form-title">Cadastrar Movimentação</h1>
+
+                    <div className="form-grid">
+                        <div className="form-group full-width">
+                            <label htmlFor="id_produto">Produto</label>
+                            <select
+                                name="id_produto"
+                                id="id_produto"
+                                required
+                                value={formData.id_produto}
+                                onChange={handleChange}
+                            >
+                                <option value="">-- Selecione o Produto --</option>
+                                {produtos.map((prod) => {
+                                    const id = (prod as any).id_produto ?? (prod as any).id;
+                                    return (
+                                        <option key={id} value={id}>
+                                            {prod.nome} (Atual: {prod.quantidade_disponivel ?? 0})
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="tipo">Tipo de Movimentação</label>
+                                <select
+                                    name="tipo"
+                                    id="tipo"
+                                    required
+                                    value={formData.tipo}
+                                    onChange={handleChange}
+                                >
+                                    <option value="ENTRADA">ENTRADA (+ Estoque)</option>
+                                    <option value="SAIDA">SAÍDA (- Estoque)</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="quantidade">Quantidade</label>
+                                <input
+                                    type="number"
+                                    name="quantidade"
+                                    id="quantidade"
+                                    min="1"
+                                    required
+                                    value={formData.quantidade || ''}
+                                    onChange={handleChange}
+                                    placeholder="Ex: 10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group full-width">
+                            <label htmlFor="observacao">Observação</label>
+                            <textarea
+                                name="observacao"
+                                id="observacao"
+                                rows={3}
+                                value={formData.observacao}
+                                onChange={handleChange}
+                                placeholder="Motivo da entrada/saída (opcional)..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-actions">
+                        <button type="submit" className="btn-submit">
+                            CADASTRAR MOVIMENTAÇÃO
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/movimentacoes')}
+                            className="btn-cancel"
+                        >
+                            VOLTAR PARA LISTAGEM
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="tipo">Tipo de Movimentação</label>
-                <select
-                  name="tipo"
-                  id="tipo"
-                  required
-                  value={formData.tipo}
-                  onChange={handleChange}
-                >
-                  <option value="">-- Escolha o tipo --</option>
-                  {OPCOES_TIPO.map((item, index) => (
-                    <option key={index} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="quantidade">Quantidade</label>
-                <input
-                  type="number"
-                  name="quantidade"
-                  id="quantidade"
-                  min="1"
-                  required
-                  value={formData.quantidade || ''}
-                  onChange={handleChange}
-                  placeholder="1"
-                />
-              </div>
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="data">Data</label>
-              <input
-                type="date"
-                name="data"
-                id="data"
-                required
-                value={formData.data}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group full-width">
-              <label htmlFor="observacao">Observação</label>
-              <textarea
-                name="observacao"
-                id="observacao"
-                rows={3}
-                value={formData.observacao}
-                onChange={handleChange}
-                placeholder="Motivo da saída/entrada..."
-              />
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="btn-submit">
-              REGISTRAR MOVIMENTAÇÃO
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/movimentacoes')}
-              className="btn-cancel"
-            >
-              VOLTAR PARA LISTAGEM
-            </button>
-          </div>
-        </form>
-      </div>
-    </main>
-  );
+        </main>
+    );
 }
 
 export default PCadastroMovimentacao;
