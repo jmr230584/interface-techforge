@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../../Middleware/AuthMiddleware";
 import { PWelcome } from "../../pages/PWelcome/PWelcome";
+import { PLogin } from "../../pages/PLogin/PLogin";
 import PHome from "../../pages/PHome/PHome";
 import PListagemProduto from "../../pages/PListagem/PListagemProduto/PListagemProduto";
 import PCadastroProduto from "../../pages/PCadastro/PCadastroProduto/PCadastroProduto";
@@ -10,7 +11,6 @@ import PCadastroCategoria from "../../pages/PCadastro/PCadastroCategoria/PCadast
 import PListagemMovimentacao from "../../pages/PListagem/PListagemMovimentacao/PListagemMovimentacao";
 import PCadastroMovimentacao from "../../pages/PCadastro/PCadastroMovimentacao/PCadastroMovimentacao";
 
-// Usando React.ReactElement para evitar qualquer dependência do namespace global JSX
 function RotaProtegida({ children }: { children: React.ReactElement }) {
   const { autenticado, loading } = useAuth();
 
@@ -23,13 +23,16 @@ export function Rotas() {
   return (
     <Routes>
       <Route path="/" element={<PWelcome />} />
+      <Route path="/login" element={<PLogin />} />
       <Route path="/home" element={<RotaProtegida><PHome /></RotaProtegida>}/>
       <Route path="/produtos" element={<RotaProtegida><PListagemProduto /></RotaProtegida>}/>
       <Route path="/cadastro/produto" element={<RotaProtegida><PCadastroProduto /></RotaProtegida>}/>
       <Route path="/categorias" element={<RotaProtegida><PListagemCategoria /></RotaProtegida>}/>
       <Route path="/cadastro/categoria" element={<RotaProtegida><PCadastroCategoria /></RotaProtegida>}/>
       <Route path="/movimentacao" element={<RotaProtegida><PListagemMovimentacao /></RotaProtegida>}/>
+      <Route path="/movimentacoes" element={<RotaProtegida><PListagemMovimentacao /></RotaProtegida>}/>
       <Route path="/cadastro/movimentacao" element={<RotaProtegida><PCadastroMovimentacao /></RotaProtegida>} />
+      <Route path="/cadastro/movimentacoes" element={<RotaProtegida><PCadastroMovimentacao /></RotaProtegida>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
