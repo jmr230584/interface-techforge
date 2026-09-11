@@ -2,6 +2,18 @@ import type { ProdutoDTO } from "../dto/ProdutoDTO";
 
 const API_URL = "http://localhost:3000";
 
+function getHeaders(includeContentType = true): HeadersInit {
+    const headers: Record<string, string> = {};
+    if (includeContentType) {
+        headers["Content-Type"] = "application/json";
+    }
+    const token = localStorage.getItem("@TechForge:token");
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 export class ProdutoRequests {
 
     /**
@@ -9,7 +21,9 @@ export class ProdutoRequests {
      */
     static async listarTodos(): Promise<ProdutoDTO[]> {
         try {
-            const response = await fetch(`${API_URL}/produtos`);
+            const response = await fetch(`${API_URL}/produtos`, {
+                headers: getHeaders(false)
+            });
             if (response.status === 204) return [];
             if (!response.ok) throw new Error("Erro ao buscar produtos.");
             return await response.json();
@@ -26,7 +40,7 @@ export class ProdutoRequests {
         try {
             const response = await fetch(`${API_URL}/produto`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getHeaders(true),
                 body: JSON.stringify(produto)
             });
 
@@ -50,7 +64,6 @@ export class ProdutoRequests {
      */
     static async atualizar(produto: any): Promise<boolean> {
         try {
-            // Garante a extração do ID seja vindo como id_produto ou id
             const id = produto.id_produto ?? produto.id;
 
             if (!id) {
@@ -60,7 +73,7 @@ export class ProdutoRequests {
 
             const response = await fetch(`${API_URL}/produto/${id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: getHeaders(true),
                 body: JSON.stringify(produto)
             });
 
@@ -84,7 +97,6 @@ export class ProdutoRequests {
      */
     static async remover(idOuObjeto: any): Promise<boolean> {
         try {
-            // Se passou o objeto todo, extrai a propriedade. Se passou o número, usa direto.
             const id = typeof idOuObjeto === "object" 
                 ? (idOuObjeto.id_produto ?? idOuObjeto.id) 
                 : idOuObjeto;
@@ -96,7 +108,7 @@ export class ProdutoRequests {
 
             const response = await fetch(`${API_URL}/produto/${id}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" }
+                headers: getHeaders(false)
             });
 
             if (!response.ok) {

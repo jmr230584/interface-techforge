@@ -3,6 +3,18 @@ import type CategoriaDTO from '../dto/CategoriaDTO';
 
 const BASE_URL = 'http://localhost:3000';
 
+function getHeaders(includeContentType = true): HeadersInit {
+    const headers: Record<string, string> = {};
+    if (includeContentType) {
+        headers["Content-Type"] = "application/json";
+    }
+    const token = localStorage.getItem("@TechForge:token");
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 export class CategoriaRequests {
   /**
    * Listar todas as categorias
@@ -10,7 +22,9 @@ export class CategoriaRequests {
    */
   static async listarTodas(): Promise<CategoriaDTO[]> {
     try {
-      const response = await fetch(`${BASE_URL}/categorias`);
+      const response = await fetch(`${BASE_URL}/categorias`, {
+        headers: getHeaders(false)
+      });
       if (!response.ok) throw new Error('Erro ao buscar categorias.');
 
       const dados = await response.json();
@@ -27,7 +41,9 @@ export class CategoriaRequests {
    */
   static async buscarPorId(id: number | string): Promise<CategoriaDTO | null> {
     try {
-      const response = await fetch(`${BASE_URL}/categoria/${id}`);
+      const response = await fetch(`${BASE_URL}/categoria/${id}`, {
+        headers: getHeaders(false)
+      });
       if (!response.ok) return null;
 
       return await response.json();
@@ -45,7 +61,7 @@ export class CategoriaRequests {
     try {
       const response = await fetch(`${BASE_URL}/categoria`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(true),
         body: JSON.stringify(categoria),
       });
       return response.ok;
@@ -63,7 +79,7 @@ export class CategoriaRequests {
     try {
       const response = await fetch(`${BASE_URL}/categoria/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(true),
         body: JSON.stringify(categoria),
       });
       return response.ok;
@@ -77,6 +93,7 @@ export class CategoriaRequests {
     try {
         const response = await fetch(`${BASE_URL}/categoria/${id}`, {
             method: 'DELETE',
+            headers: getHeaders(false),
         });
 
         const dados = await response.json().catch(() => ({}));
@@ -93,5 +110,5 @@ export class CategoriaRequests {
         console.error('Erro em CategoriaRequests.deletar:', error);
         return { sucesso: false, mensagem: "Erro ao conectar com o servidor para exclusão." };
     }
-}
+  }
 }

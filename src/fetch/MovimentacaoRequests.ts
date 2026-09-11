@@ -2,6 +2,18 @@ import type MovimentacaoDTO from "../dto/MovimentacaoDTO";
 
 const API_URL = "http://localhost:3000";
 
+function getHeaders(includeContentType = true): HeadersInit {
+    const headers: Record<string, string> = {};
+    if (includeContentType) {
+        headers["Content-Type"] = "application/json";
+    }
+    const token = localStorage.getItem("@TechForge:token");
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+}
+
 export class MovimentacaoRequests {
 
     /**
@@ -9,7 +21,9 @@ export class MovimentacaoRequests {
      */
     static async listarTodas(): Promise<MovimentacaoDTO[]> {
         try {
-            const response = await fetch(`${API_URL}/movimentacoes`);
+            const response = await fetch(`${API_URL}/movimentacoes`, {
+                headers: getHeaders(false)
+            });
             if (response.status === 204) return [];
             if (!response.ok) throw new Error("Erro ao buscar movimentações.");
             return await response.json();
@@ -26,7 +40,7 @@ export class MovimentacaoRequests {
         try {
             const response = await fetch(`${API_URL}/movimentacoes`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getHeaders(true),
                 body: JSON.stringify(movimentacao)
             });
 
@@ -58,7 +72,7 @@ export class MovimentacaoRequests {
 
             const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: getHeaders(true),
                 body: JSON.stringify(movimentacao)
             });
 
@@ -92,7 +106,7 @@ export class MovimentacaoRequests {
 
             const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" }
+                headers: getHeaders(false)
             });
 
             if (!response.ok) {
