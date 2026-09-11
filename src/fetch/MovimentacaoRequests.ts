@@ -1,71 +1,111 @@
 import type MovimentacaoDTO from "../dto/MovimentacaoDTO";
 
-const API_URL = 'http://localhost:3000/movimentacoes';
+const API_URL = "http://localhost:3000";
 
 export class MovimentacaoRequests {
-  static async listarTodas(): Promise<MovimentacaoDTO[]> {
-    try {
-      const response = await fetch(API_URL);
-      if (!response.ok) throw new Error('Erro ao buscar movimentações.');
 
-      const dados = await response.json();
-      return Array.isArray(dados) ? dados : [];
-    } catch (error) {
-      console.error('Erro em MovimentacaoRequests.listarTodas:', error);
-      throw error;
+    /**
+     * Rota: GET /movimentacoes
+     */
+    static async listarTodas(): Promise<MovimentacaoDTO[]> {
+        try {
+            const response = await fetch(`${API_URL}/movimentacoes`);
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error("Erro ao buscar movimentações.");
+            return await response.json();
+        } catch (error) {
+            console.error("Erro ao listar movimentações:", error);
+            throw error;
+        }
     }
-  }
 
-  static async buscarPorId(id: number | string): Promise<MovimentacaoDTO | null> {
-    try {
-      const response = await fetch(`${API_URL}/${id}`);
-      if (!response.ok) throw new Error(`Erro ao buscar movimentação ${id}.`);
+    /**
+     * Rota: POST /movimentacoes
+     */
+    static async cadastrar(movimentacao: Partial<MovimentacaoDTO>): Promise<boolean> {
+        try {
+            const response = await fetch(`${API_URL}/movimentacoes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(movimentacao)
+            });
 
-      const dado = await response.json();
-      return dado;
-    } catch (error) {
-      console.error(`Erro em MovimentacaoRequests.buscarPorId (${id}):`, error);
-      return null;
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao cadastrar (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao cadastrar movimentação.");
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Erro ao cadastrar movimentação:", error);
+            return false;
+        }
     }
-  }
 
-  static async cadastrar(movimentacao: Partial<MovimentacaoDTO>): Promise<boolean> {
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(movimentacao)
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Erro em MovimentacaoRequests.cadastrar:', error);
-      return false;
-    }
-  }
+    /**
+     * Rota: PUT /movimentacoes/:id
+     */
+    static async atualizar(movimentacao: any): Promise<boolean> {
+        try {
+            const id = movimentacao.id_movimentacao ?? movimentacao.id;
 
-  static async atualizar(id: number | string, movimentacao: Partial<MovimentacaoDTO>): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(movimentacao)
-      });
-      return response.ok;
-    } catch (error) {
-      console.error(`Erro em MovimentacaoRequests.atualizar (${id}):`, error);
-      return false;
-    }
-  }
+            if (!id) {
+                alert("Não foi possível identificar o ID da movimentação para atualização.");
+                return false;
+            }
 
-  static async deletar(id: number | string): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE'
-      });
-      return response.ok;
-    } catch (error) {
-      console.error(`Erro em MovimentacaoRequests.deletar (${id}):`, error);
-      return false;
+            const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(movimentacao)
+            });
+
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao atualizar (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao atualizar movimentação.");
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Erro ao atualizar movimentação:", error);
+            return false;
+        }
     }
-  }
+
+    /**
+     * Rota: DELETE /movimentacoes/:id
+     */
+    static async remover(idOuObjeto: any): Promise<boolean> {
+        try {
+            const id = typeof idOuObjeto === "object" 
+                ? (idOuObjeto.id_movimentacao ?? idOuObjeto.id) 
+                : idOuObjeto;
+
+            if (!id) {
+                alert("Não foi possível identificar o ID da movimentação para exclusão.");
+                return false;
+            }
+
+            const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao remover (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao remover movimentação.");
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Erro ao remover movimentação:", error);
+            return false;
+        }
+    }
 }
