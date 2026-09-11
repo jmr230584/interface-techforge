@@ -1,101 +1,115 @@
-// src/fetch/ProdutoRequests.ts
 import type { ProdutoDTO } from "../dto/ProdutoDTO";
 
-const URL_BASE_PLURAL = "http://localhost:3000/produtos";
-const URL_BASE_SINGULAR = "http://localhost:3000/produto";
+const API_URL = "http://localhost:3000";
 
 export class ProdutoRequests {
-  // GET /produtos (Plural)
-  static async listarTodos(): Promise<ProdutoDTO[]> {
-    try {
-      const resposta = await fetch(URL_BASE_PLURAL);
-      if (!resposta.ok) throw new Error(`Status HTTP: ${resposta.status}`);
-      return await resposta.json();
-    } catch (error) {
-      console.error("Erro ao listar produtos:", error);
-      throw error;
+
+    /**
+     * Rota: GET /produtos
+     */
+    static async listarTodos(): Promise<ProdutoDTO[]> {
+        try {
+            const response = await fetch(`${API_URL}/produtos`);
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error("Erro ao buscar produtos.");
+            return await response.json();
+        } catch (error) {
+            console.error("Erro ao listar produtos:", error);
+            throw error;
+        }
     }
-  }
 
-  // POST /produto (Singular)
-  static async cadastrar(produto: ProdutoDTO): Promise<boolean> {
-    try {
-      const payload = {
-        ...produto,
-        preco_unitario: Number(produto.preco_unitario),
-        quantidade_disponivel: Number(produto.quantidade_disponivel),
-        quantidade_minima: Number(produto.quantidade_minima),
-      };
+    /**
+     * Rota: POST /produto
+     */
+    static async cadastrar(produto: Partial<ProdutoDTO>): Promise<boolean> {
+        try {
+            const response = await fetch(`${API_URL}/produto`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(produto)
+            });
 
-      const resposta = await fetch(URL_BASE_SINGULAR, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao cadastrar (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao cadastrar produto.");
+                return false;
+            }
 
-      if (!resposta.ok) {
-        const erroDetalhes = await resposta.text();
-        console.error(`Erro no cadastro (${resposta.status}):`, erroDetalhes);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Erro na requisição de cadastro:", error);
-      return false;
+            return true;
+        } catch (error) {
+            console.error("Erro ao cadastrar produto:", error);
+            return false;
+        }
     }
-  }
 
-  // PUT /produto/:id (Singular)
-  static async atualizar(idOuCodigo: string | number, produto: Partial<ProdutoDTO>): Promise<boolean> {
-    try {
-      const payload = {
-        ...produto,
-        preco_unitario: produto.preco_unitario !== undefined ? Number(produto.preco_unitario) : undefined,
-        quantidade_disponivel: produto.quantidade_disponivel !== undefined ? Number(produto.quantidade_disponivel) : undefined,
-        quantidade_minima: produto.quantidade_minima !== undefined ? Number(produto.quantidade_minima) : undefined,
-      };
+    /**
+     * Rota: PUT /produto/:id
+     * Garante a leitura do id do produto independente do nome da propriedade
+     */
+    static async atualizar(produto: any): Promise<boolean> {
+        try {
+            // Garante a extração do ID seja vindo como id_produto ou id
+            const id = produto.id_produto ?? produto.id;
 
-      const resposta = await fetch(`${URL_BASE_SINGULAR}/${idOuCodigo}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+            if (!id) {
+                alert("Não foi possível identificar o ID do produto para atualização.");
+                return false;
+            }
 
-      if (!resposta.ok) {
-        const erroDetalhes = await resposta.text();
-        console.error(`Erro ao atualizar (${resposta.status}):`, erroDetalhes);
-        return false;
-      }
+            const response = await fetch(`${API_URL}/produto/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(produto)
+            });
 
-      return true;
-    } catch (error) {
-      console.error("Erro na requisição de atualização:", error);
-      return false;
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao atualizar (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao atualizar produto.");
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Erro ao atualizar produto:", error);
+            return false;
+        }
     }
-  }
 
-  // DELETE /produto/:id (Singular)
-  static async deletar(idOuCodigo: string | number): Promise<boolean> {
-    try {
-      const resposta = await fetch(`${URL_BASE_SINGULAR}/${idOuCodigo}`, {
-        method: "DELETE",
-      });
+    /**
+     * Rota: DELETE /produto/:id
+     * Aceita tanto o número do ID direto quanto o objeto do produto
+     */
+    static async remover(idOuObjeto: any): Promise<boolean> {
+        try {
+            // Se passou o objeto todo, extrai a propriedade. Se passou o número, usa direto.
+            const id = typeof idOuObjeto === "object" 
+                ? (idOuObjeto.id_produto ?? idOuObjeto.id) 
+                : idOuObjeto;
 
-      if (!resposta.ok) {
-        const erroDetalhes = await resposta.text();
-        console.error(`Erro ao deletar (${resposta.status}):`, erroDetalhes);
-        return false;
-      }
+            if (!id) {
+                alert("Não foi possível identificar o ID do produto para exclusão.");
+                return false;
+            }
 
-      return true;
-    } catch (error) {
-      console.error("Erro na requisição de exclusão:", error);
-      return false;
+            const response = await fetch(`${API_URL}/produto/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            if (!response.ok) {
+                const erro = await response.json().catch(() => ({}));
+                console.error(`Erro ao remover (${response.status}):`, erro);
+                alert(erro.mensagem || "Erro ao remover produto.");
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Erro ao remover produto:", error);
+            return false;
+        }
     }
-  }
 }
