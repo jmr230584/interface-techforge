@@ -83,17 +83,16 @@ export function PListagemMovimentacao() {
 
     const handleDeletar = async (id?: number) => {
         if (!id) return;
-        if (!window.confirm("Tem certeza que deseja excluir esta movimentação? O estoque será estornado automaticamente.")) return;
+        if (!window.confirm("Tem certeza que deseja cancelar esta movimentação? Um estorno de correção será registrado no histórico.")) return;
 
         try {
             const sucesso = await MovimentacaoRequests.remover(id);
             if (sucesso) {
-                setMovimentacoes((prev) => 
-                    prev.filter((m) => ((m as any).id_movimentacao ?? (m as any).id) !== id)
-                );
+                // Recarrega o histórico completo para exibir a correção gerada
+                await carregarMovimentacoes();
             }
         } catch (err) {
-            alert("Erro ao conectar com o servidor para exclusão.");
+            alert("Erro ao conectar com o servidor para cancelamento.");
         }
     };
 
