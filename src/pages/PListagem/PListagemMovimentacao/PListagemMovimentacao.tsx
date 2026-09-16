@@ -70,8 +70,19 @@ export function PListagemMovimentacao() {
             const sucesso = await MovimentacaoRequests.atualizar(dadosAtualizados);
 
             if (sucesso) {
-                // Recarrega a lista para manter os dados sincronizados
-                await carregarMovimentacoes();
+                setMovimentacoes((prev) =>
+                    prev.map((m) => {
+                        const mId = (m as any).id_movimentacao ?? (m as any).id;
+                        return mId === id 
+                            ? { 
+                                ...m, 
+                                tipo: tipoEdit, 
+                                quantidade: Number(quantidadeEdit), 
+                                observacao: observacaoEdit || null 
+                            } 
+                            : m;
+                    })
+                );
                 handleFecharModal();
             }
         } catch (err) {
@@ -83,16 +94,18 @@ export function PListagemMovimentacao() {
 
     const handleDeletar = async (id?: number) => {
         if (!id) return;
-        if (!window.confirm("Tem certeza que deseja cancelar esta movimentação? Um estorno de correção será registrado no histórico.")) return;
+        if (!window.confirm("Tem certeza que deseja excluir esta movimentação? O estoque será recalculado automaticamente.")) return;
 
         try {
             const sucesso = await MovimentacaoRequests.remover(id);
             if (sucesso) {
-                // Recarrega o histórico completo para exibir a correção gerada
-                await carregarMovimentacoes();
+                // Remove o registro da tabela imediatamente
+                setMovimentacoes((prev) => 
+                    prev.filter((m) => ((m as any).id_movimentacao ?? (m as any).id) !== id)
+                );
             }
         } catch (err) {
-            alert("Erro ao conectar com o servidor para cancelamento.");
+            alert("Erro ao conectar com o servidor para exclusão.");
         }
     };
 
