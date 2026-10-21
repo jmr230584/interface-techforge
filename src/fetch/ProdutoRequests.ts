@@ -1,6 +1,7 @@
 import type { ProdutoDTO } from "../dto/ProdutoDTO";
 
-const API_URL = "http://localhost:3000";
+//const API_URL = "http://localhost:3000";
+import { API_URL } from '../config/api';
 
 function getHeaders(includeContentType = true): HeadersInit {
     const headers: Record<string, string> = {};
@@ -97,8 +98,8 @@ export class ProdutoRequests {
      */
     static async remover(idOuObjeto: any): Promise<boolean> {
         try {
-            const id = typeof idOuObjeto === "object" 
-                ? (idOuObjeto.id_produto ?? idOuObjeto.id) 
+            const id = typeof idOuObjeto === "object"
+                ? (idOuObjeto.id_produto ?? idOuObjeto.id)
                 : idOuObjeto;
 
             if (!id) {

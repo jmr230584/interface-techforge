@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../Middleware/AuthMiddleware';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../../config/api';
 
 export function PWelcome() {
     const [modalAtivo, setModalAtivo] = useState<'login' | 'cadastro' | null>(null);
@@ -42,14 +43,14 @@ export function PWelcome() {
 
         try {
             // Tenta /auth/login e faz fallback para /login caso suas rotas nao usem prefixo
-            let response = await fetch('http://localhost:3000/auth/login', {
+            let response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, senha }),
             });
 
             if (response.status === 404) {
-                response = await fetch('http://localhost:3000/login', {
+                response = await fetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, senha }),
@@ -83,7 +84,7 @@ export function PWelcome() {
         setCarregando(true);
 
         try {
-            const response = await fetch('http://localhost:3000/usuario', {
+            const response = await fetch(`${API_URL}/usuario`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nome, email, senha }),
@@ -96,7 +97,7 @@ export function PWelcome() {
             }
 
             setSucesso('Cadastro realizado! Redirecionando para o login...');
-            
+
             setTimeout(() => {
                 abrirModal('login');
             }, 1500);
@@ -117,14 +118,14 @@ export function PWelcome() {
                 </p>
 
                 <div style={styles.containerBotoes}>
-                    <button 
-                        onClick={() => abrirModal('login')} 
+                    <button
+                        onClick={() => abrirModal('login')}
                         style={styles.botaoPrincipal}
                     >
                         Login
                     </button>
-                    <button 
-                        onClick={() => abrirModal('cadastro')} 
+                    <button
+                        onClick={() => abrirModal('cadastro')}
                         style={styles.botaoSecundario}
                     >
                         Cadastre-se
@@ -147,8 +148,8 @@ export function PWelcome() {
                         {erro && <div style={styles.alertaErro}>{erro}</div>}
                         {sucesso && <div style={styles.alertaSucesso}>{sucesso}</div>}
 
-                        <form 
-                            onSubmit={modalAtivo === 'login' ? handleLoginSubmit : handleCadastroSubmit} 
+                        <form
+                            onSubmit={modalAtivo === 'login' ? handleLoginSubmit : handleCadastroSubmit}
                             style={styles.form}
                         >
                             {/* Campo Nome exibido apenas no Cadastro */}
@@ -190,13 +191,13 @@ export function PWelcome() {
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
-                                disabled={carregando} 
+                            <button
+                                type="submit"
+                                disabled={carregando}
                                 style={styles.botaoSubmit}
                             >
-                                {carregando 
-                                    ? 'Aguarde...' 
+                                {carregando
+                                    ? 'Aguarde...'
                                     : modalAtivo === 'login' ? 'Entrar' : 'Cadastrar'
                                 }
                             </button>

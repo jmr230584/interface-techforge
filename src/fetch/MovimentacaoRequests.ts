@@ -1,6 +1,7 @@
 import type MovimentacaoDTO from "../dto/MovimentacaoDTO";
 
-const API_URL = "http://localhost:3000";
+//const API_URL = "http://localhost:3000";
+import { API_URL } from '../config/api';
 
 function getHeaders(includeContentType = true): HeadersInit {
     const headers: Record<string, string> = {};
@@ -95,8 +96,8 @@ export class MovimentacaoRequests {
      */
     static async remover(idOuObjeto: any): Promise<boolean> {
         try {
-            const id = typeof idOuObjeto === "object" 
-                ? (idOuObjeto.id_movimentacao ?? idOuObjeto.id) 
+            const id = typeof idOuObjeto === "object"
+                ? (idOuObjeto.id_movimentacao ?? idOuObjeto.id)
                 : idOuObjeto;
 
             if (!id) {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../Middleware/AuthMiddleware';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../../config/api';
 
 export const PLogin: React.FC = () => {
     // Controla qual modal está aberto: null, 'login' ou 'cadastro'
@@ -42,7 +43,7 @@ export const PLogin: React.FC = () => {
         setCarregando(true);
 
         try {
-            const response = await fetch('http://localhost:3000/login', {
+            const response = await fetch(`${API_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, senha }),
@@ -75,7 +76,7 @@ export const PLogin: React.FC = () => {
         setCarregando(true);
 
         try {
-            const response = await fetch('http://localhost:3000/usuario', {
+            const response = await fetch(`${API_URL}/usuario`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nome, email, senha }),
@@ -109,14 +110,14 @@ export const PLogin: React.FC = () => {
                 </p>
 
                 <div style={styles.containerBotoes}>
-                    <button 
-                        onClick={() => abrirModal('login')} 
+                    <button
+                        onClick={() => abrirModal('login')}
                         style={styles.botaoPrincipal}
                     >
                         Entrar na Plataforma
                     </button>
-                    <button 
-                        onClick={() => abrirModal('cadastro')} 
+                    <button
+                        onClick={() => abrirModal('cadastro')}
                         style={styles.botaoSecundario}
                     >
                         Cadastre-se
@@ -140,8 +141,8 @@ export const PLogin: React.FC = () => {
                         {erro && <div style={styles.alertaErro}>{erro}</div>}
                         {sucesso && <div style={styles.alertaSucesso}>{sucesso}</div>}
 
-                        <form 
-                            onSubmit={modalAtivo === 'login' ? handleLoginSubmit : handleCadastroSubmit} 
+                        <form
+                            onSubmit={modalAtivo === 'login' ? handleLoginSubmit : handleCadastroSubmit}
                             style={styles.form}
                         >
                             {modalAtivo === 'cadastro' && (
@@ -182,13 +183,13 @@ export const PLogin: React.FC = () => {
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
-                                disabled={carregando} 
+                            <button
+                                type="submit"
+                                disabled={carregando}
                                 style={styles.botaoSubmit}
                             >
-                                {carregando 
-                                    ? 'Processando...' 
+                                {carregando
+                                    ? 'Processando...'
                                     : modalAtivo === 'login' ? 'Entrar' : 'Cadastrar'
                                 }
                             </button>
